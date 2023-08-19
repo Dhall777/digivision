@@ -8,7 +8,7 @@
 
 - How to run the project:
 	- start the app in Elixir's interactive shell
-		-- iex -S mix
+		- iex -S mix
 	- run your prediction
 		- Digivision.Prediction_Agent.numbers_prediction(numbers_input)
 		- numbers input expects an integer; I should get used to defining this via Elixir's typespecs annotation... meh.
