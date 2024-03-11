@@ -12,6 +12,7 @@ defmodule Digivision.Prediction_Agent do
   @sequence_length 1
   @sequence_features 1
   @batch_size 1
+  #@numbers_dataset Enum.to_list(0..100)
   @numbers_dataset Enum.to_list(0..100)
   @split_ratio 0.8
 
@@ -20,63 +21,67 @@ defmodule Digivision.Prediction_Agent do
     numbers_dataset = @numbers_dataset
     split_ratio = @split_ratio
 
-    {numbers_training_dataset_x, numbers_testing_dataset_y} = Data_Utils.dataset_split(@numbers_dataset, @split_ratio)
+    {numbers_training_dataset, numbers_testing_dataset} = Data_Utils.dataset_split(@numbers_dataset, @split_ratio)
   end
 
-  def load_training_dataset(numbers_training_dataset_x) do
+  def load_training_dataset(numbers_training_dataset) do
     sequence_length = @sequence_length
     batch_size = @batch_size
     # define x_train and y_train values | perform minimal normalization
     x_train =
-      numbers_training_dataset_x
+      numbers_training_dataset
       |> Enum.chunk_every(@sequence_length, 1, :discard)
       |> Enum.drop(-1)
       |> Nx.tensor()
+      #|> Nx.shape()
       #|> Nx.divide(100)
       #|> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
     y_train =
-      numbers_training_dataset_x
+      numbers_training_dataset
       |> Enum.chunk_every(@sequence_length, 1, :discard)
       |> Enum.drop(1)
       |> Nx.tensor()
+      #|> Nx.shape()
       #|> Nx.divide(100)
       #|> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
-    numbers_training = Stream.zip(x_train, y_train)
+    numbers_training_zipped = Stream.zip(x_train, y_train)
   end
 
-  def load_testing_dataset(numbers_testing_dataset_y) do
+  def load_testing_dataset(numbers_testing_dataset) do
     sequence_length = @sequence_length
     batch_size = @batch_size
     # define x_test and y_test values | perform minimal normalization
     x_test =
-      numbers_testing_dataset_y
+      numbers_testing_dataset
       |> Enum.chunk_every(@sequence_length, 1, :discard)
       |> Enum.drop(-1)
       |> Nx.tensor()
+      #|> Nx.shape()
       #|> Nx.divide(100)
       #|> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
     y_test =
-      numbers_testing_dataset_y
+      numbers_testing_dataset
       |> Enum.chunk_every(@sequence_length, 1, :discard)
       |> Enum.drop(1)
       |> Nx.tensor()
+      #|> Nx.shape()
       #|> Nx.divide(100)
       #|> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
-    numbers_testing = Stream.zip(x_test, y_test)
+    numbers_testing_zipped = Stream.zip(x_test, y_test)
   end
 
   def numbers_model() do
     # define numbers prediction model
     numbers_model =
-      Axon.input("numbers", shape: {1, 1, 1})
+      Axon.input("numbers", shape: {80, 1})
       #|> Axon.dense(81, activation: :linear)
       #|> Axon.dense(70, activation: :linear)
       #|> Axon.dense(60, activation: :linear)
@@ -84,10 +89,10 @@ defmodule Digivision.Prediction_Agent do
       #|> Axon.dense(40, activation: :linear)
       #|> Axon.dense(30, activation: :linear)
       #|> Axon.dense(20, activation: :linear)
-      |> Axon.dense(10, activation: :linear)
-      |> Axon.dense(5, activation: :linear)
+      |> Axon.dense(10, kernel_initializer: :he_uniform, activation: :linear)
+      |> Axon.dense(5, kernel_initializer: :he_uniform, activation: :linear)
       |> Axon.dropout(rate: 0.00005)
-      |> Axon.dense(1, activation: :linear)
+      |> Axon.dense(1, kernel_initializer: :he_uniform, activation: :linear)
   end
 
   def trained_model_params(numbers_model, numbers_training_dataset) do
@@ -104,7 +109,7 @@ defmodule Digivision.Prediction_Agent do
       |> Axon.Loop.evaluator()
       |> Axon.Loop.metric(:mean_absolute_error)
       #|> Axon.Loop.metric(:true_positives)
-      |> Axon.Loop.metric(:accuracy)
+      #|> Axon.Loop.metric(:accuracy)
       #|> Axon.Loop.metric(:recall)
       #|> Axon.Loop.metric(:precision)
       |> Axon.Loop.run(numbers_testing_dataset, numbers_model_training_params, iterations: 100)
