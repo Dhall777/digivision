@@ -4,12 +4,12 @@
 
 - Project Summary:
 	- This is a basic deep learning model that predicts the next number in a sequence using only dense layers.
-	- Review [this article]() for a full breakdown
+	- Review [this article](https://medium.com/@boring-it-guy/elixir-nx-axon-building-a-number-prediction-model-776c0dfe97b0) for a full breakdown
 
 - How to run the project:
 	- start the app in Elixir's interactive shell
 		- `iex -S mix`
-	- establish parameters and run your predictions
+	- establish parameters and run your predictions; run these commands sequentially
 		- `alias Digivision.Prediction_Agent`
 		- `alias Digivision.Data_Utils`
 		- `import Axon`
@@ -23,6 +23,7 @@
 		- `x_test = [80]`
 		- `Prediction_Agent.numbers_prediction(x_test, numbers_model, numbers_model_training_params)`
 		- `numbers_input` expects an integer (I should get used to defining this via Elixir's typespecs annotation... meh)
+		- `x_test` can be whatever number your heart desires
 
 - Disclaimer
 	- This app is just a manifestation of my journey with deep learning, use it as you wish.
