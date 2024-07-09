@@ -26,7 +26,8 @@ defmodule Digivision.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       {:axon, "~> 0.6.0"},
       {:exla, "~> 0.6.0"},
-      {:nx, "~> 0.6.0"}
+      {:nx, "~> 0.6.0"},
+      {:nimble_csv, "~> 1.1"}
     ]
   end
 end
