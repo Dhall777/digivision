@@ -3,8 +3,7 @@
 - Simple number prediction app built upon Axon's deep learning/DL utilities
 
 - Project Summary:
-	- This is a basic deep learning model that the next number in a sequence using only dense layers built with Axon, Elixir's primary deep learning utility. 
-	- It can be applied to several forecasting problems, as demonstrated in the price-prediction branch of this project
+	- This is a basic deep learning model that predicts stock and crypto prices
 	- Review [this article](https://medium.com/@boring-it-guy/elixir-nx-axon-building-a-number-prediction-model-776c0dfe97b0) for a full breakdown
 
 - How to run the project:
