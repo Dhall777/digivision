@@ -3,7 +3,8 @@
 - Simple number prediction app built upon Axon's deep learning/DL utilities
 
 - Project Summary:
-	- This is a basic deep learning model that predicts stock and crypto prices.
+	- This is a basic deep learning model that the next number in a sequence using only dense layers built with Axon, Elixir's primary deep learning utility. 
+	- It can be applied to several forecasting problems, as demonstrated in the price-prediction branch of this project
 	- Review [this article](https://medium.com/@boring-it-guy/elixir-nx-axon-building-a-number-prediction-model-776c0dfe97b0) for a full breakdown
 
 - How to run the project:
@@ -23,10 +24,8 @@
 		- `price_model_training_params = Prediction_Agent.trained_model_params(price_model, training_dataset)`
 		- `Prediction_Agent.evaluate_price_model(price_model, price_model_training_params, testing_dataset)`
 		- `x_test = [80]`
-			- just an example x_test, but can be whatever date/price combination you wish
 		- `Prediction_Agent.price_prediction(x_test, price_model, price_model_training_params)`
 		- `x_test` expects an integer (I should get used to defining this via Elixir's typespecs annotation... meh)
-		- `x_test` can be whatever number your heart desires
 
 - Disclaimer
 	- This app is just a manifestation of my journey with deep learning, use it as you wish.
