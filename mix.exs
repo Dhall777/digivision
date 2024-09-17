@@ -27,7 +27,8 @@ defmodule Digivision.MixProject do
       {:axon, "~> 0.6.0"},
       {:exla, "~> 0.6.0"},
       {:nx, "~> 0.6.0"},
-      {:nimble_csv, "~> 1.1"}
+      {:nimble_csv, "~> 1.1"},
+      {:polaris, "~> 0.1.0"}
     ]
   end
 end

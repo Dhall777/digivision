@@ -22,9 +22,9 @@
 		- `price_model = Prediction_Agent.price_model()`
 		- `price_model_training_params = Prediction_Agent.trained_model_params(price_model, training_dataset)`
 		- `Prediction_Agent.evaluate_price_model(price_model, price_model_training_params, testing_dataset)`
-		- `x_test = [80]`
-		- `Prediction_Agent.price_prediction(x_test, price_model, price_model_training_params)`
-		- `x_test` expects an integer (I should get used to defining this via Elixir's typespecs annotation... meh)
+		- Regarding `x_test` and `price_prediction`
+			- `x_test` length should match sequence length (35 in this case), so include 35 prices in `x_test`
+			- make sure to normalize `x_test` when making the prediction, and reverse the normlization when reading the actual predicted price
 
 - Disclaimer
 	- This app is just a manifestation of my journey with deep learning, use it as you wish.

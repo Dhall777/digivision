@@ -7,30 +7,35 @@ defmodule Digivision.Prediction_Agent do
   import Axon
   import Nx
   import NimbleCSV
+  import Polaris
 
   # set module constants
-  @sequence_length 30
-  @sequence_features 2
-  @batch_size 14
-  @price_dataset "/usr/local/elixir-apps/digivision/priv/TSLA/TSLA.csv" |> File.stream!() |> CSV.parse_stream() |> Stream.map(fn [date, close] -> [Integer.parse(date) |> elem(0), Float.parse(close) |> elem(0)] end) |> Enum.chunk_every(@sequence_length, @sequence_length, :discard)
+  @sequence_length 35
+  @sequence_features 1
+  @batch_size 5
   @split_ratio 0.8
+  @eth_price_dataset "/usr/local/elixir-apps/digivision/priv/ETH-USD/ETH-USD.csv" 
 
   def load_all_data() do
-    # in a practical situation, this dataset would be pulled from a file or database
-    price_dataset = @price_dataset
-    split_ratio = @split_ratio
-
-    {price_training_dataset, price_testing_dataset} = Data_Utils.dataset_split(@price_dataset, @split_ratio)
+    eth_data = @eth_price_dataset
+      |> File.stream!()
+      |> CSV.parse_stream()
+      |> Stream.map(fn [date, _open, _high, _low, close, _adj_close, _volume] -> {Date.from_iso8601!(date), String.to_float(close)} end)
+      |> Enum.map(fn {_date, close} -> close end)
+      |> Enum.chunk_every(@sequence_length, @sequence_length, :discard)
+    # Load & split dataset into training and testing sets
+    {price_training_dataset, price_testing_dataset} = Data_Utils.dataset_split(eth_data, @split_ratio)
   end
 
   def load_training_dataset(price_training_dataset) do
     sequence_length = @sequence_length
     batch_size = @batch_size
-    # define x_train and y_train values | perform minimal normalization
+    # define x_train and y_train values | fixed normalization method is not recommended, but it works for this article (essentially is oversimplified MinMax)
     x_train =
       price_training_dataset
       |> Enum.drop(-1)
       |> Nx.tensor()
+      |> Nx.divide(10000)
       |> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
@@ -38,6 +43,7 @@ defmodule Digivision.Prediction_Agent do
       price_training_dataset
       |> Enum.drop(1)
       |> Nx.tensor()
+      |> Nx.divide(10000)
       |> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
@@ -52,6 +58,7 @@ defmodule Digivision.Prediction_Agent do
       price_testing_dataset
       |> Enum.drop(-1)
       |> Nx.tensor()
+      |> Nx.divide(10000)
       |> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
@@ -59,6 +66,7 @@ defmodule Digivision.Prediction_Agent do
       price_testing_dataset
       |> Enum.drop(1)
       |> Nx.tensor()
+      |> Nx.divide(10000)
       |> Nx.reshape({:auto, @sequence_length, @sequence_features})
       |> Nx.to_batched(@batch_size)
 
@@ -69,36 +77,23 @@ defmodule Digivision.Prediction_Agent do
     # define price prediction model
     price_model =
       Axon.input("prices", shape: {nil, @sequence_length, @sequence_features})
-      |> Axon.dense(200, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(190, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(180, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(170, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(160, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(150, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(140, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(130, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(120, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(110, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(100, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(90, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(80, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(70, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(60, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(50, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(40, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(30, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(20, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(10, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dense(5, kernel_initializer: :he_uniform, activation: :relu)
-      |> Axon.dropout(rate: 0.05)
-      |> Axon.dense(2, kernel_initializer: :he_uniform, activation: :relu)  end
+      |> Axon.lstm(50, activation: :relu)
+      |> then(fn {output, _} -> output end)
+      |> Axon.lstm(50, activation: :relu)
+      |> then(fn {output, _} -> output end)
+#      |> Axon.conv(200, padding: :same, activation: :relu)
+#      |> Axon.max_pool(padding: :same)
+      |> Axon.dense(50, activation: :relu)
+      |> Axon.dense(25, activation: :relu)
+      |> Axon.dense(@sequence_features)
+  end
 
   def trained_model_params(price_model, price_training_dataset) do
     # train the price prediction model
     price_model_training_params =
       price_model
-      |> Axon.Loop.trainer(:mean_squared_error, Polaris.Optimizers.adamw(learning_rate: 0.00005), log: 50)
-      |> Axon.Loop.run(price_training_dataset, %{}, epochs: 100, compiler: EXLA, debug: true)
+      |> Axon.Loop.trainer(:mean_squared_error, Polaris.Optimizers.adam(learning_rate: 0.001), log: 50)
+      |> Axon.Loop.run(price_training_dataset, %{}, epochs: 3, compiler: EXLA, debug: true)
   end
 
   def evaluate_price_model(price_model, price_model_training_params, price_testing_dataset) do
@@ -110,12 +105,12 @@ defmodule Digivision.Prediction_Agent do
       #|> Axon.Loop.metric(:accuracy)
       #|> Axon.Loop.metric(:recall)
       #|> Axon.Loop.metric(:precision)
-      |> Axon.Loop.run(price_testing_dataset, price_model_training_params, iterations: 100)
+      |> Axon.Loop.run(price_testing_dataset, price_model_training_params, compiler: EXLA, iterations: 100)
   end
 
   def price_prediction(x_test, price_model, price_model_training_params) do
-    sequence_length = 1
-    sequence_features = 2
+    sequence_length = 35
+    sequence_features = 1
     # define input for prediction | define price_input via iex shell
     x_test_prep =
       x_test
@@ -127,6 +122,7 @@ defmodule Digivision.Prediction_Agent do
     price_prediction =
       Axon.predict(price_model, price_model_training_params, x_test_prep, compiler: EXLA)
       |> Nx.to_flat_list()
+      |> List.first()
   end
 
 end
