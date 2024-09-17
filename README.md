@@ -4,7 +4,7 @@
 
 - Project Summary:
 	- This is a basic deep learning model that predicts stock and crypto prices
-	- Review [this article](https://medium.com/@boring-it-guy/elixir-nx-axon-building-a-number-prediction-model-776c0dfe97b0) for a full breakdown
+	- Review [this article](https://medium.com/@boring-tech-guy/elixir-axon-predicting-crypto-prices-f22d577573f4) for a full breakdown
 
 - How to run the project:
 	- start the app in Elixir's interactive shell
